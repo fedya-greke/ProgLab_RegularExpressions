@@ -1,6 +1,6 @@
 import re
 import requests
-from typing import List, Tuple
+from typing import List
 
 class PhoneNumberValidator:
     """Класс для проверки номеров телефонов"""
@@ -10,21 +10,117 @@ class PhoneNumberValidator:
         # X - цифры, между ними могут быть пробелы, дефисы
         # Скобки могут быть только вокруг кода оператора (3 цифры после +7/8)
         self.phone_pattern = re.compile(
-            r''
+            r'(?:\+7|8)(?:\s?\(\d{3}\)\s?|\s?\d{3}\s?|\s?\(\d{3}\)|\d{3})[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}'
         )
     def validate_phone(self, phone: str) -> bool:
         """Проверка корректности для одного номера телефона"""
-        pass
+        if not phone:
+            return False
+        # Проверяем
+        if not self.phone_pattern.fullmatch(phone):
+            return False
 
-    def find_phone_in_text(self, text: str) -> List[str]:
+        cleaned = re.sub(r'[^\d+]', '', phone)
+
+        # Проверка длины:
+        # +79123456789 - 12 символов
+        # 89123456789 - 11 символов
+        if cleaned.startswith('+7') and len(cleaned) == 12:
+            return True
+        elif cleaned.startswith('8') and len(cleaned) == 11:
+            return True
+        else:
+            return False
+
+    def find_phones_in_text(self, text: str) -> List[str]:
         """Ищет номера телефонов в тексте"""
-        pass
-    def find_phone_in_file(self, text: str) -> List[str]:
+        if not text:
+            return []
+
+        # Находим всё что похоже на телефон
+        possible_phones = self.phone_pattern.findall(text)
+        # Корректные
+        valid_phones = []
+        for phone in possible_phones:
+            if self.validate_phone(phone):
+                valid_phones.append(phone)
+
+        return valid_phones
+
+    def find_phones_in_file(self, file_path: str) -> List[str]:
         """Поиск номера телефона в файле"""
-        pass
-    def find_phone_on_website(self, text: str) -> List[str]:
+        try:
+            with open(file_path, 'r', encoding='utf-8') as file:
+                text = file.read()
+                return self.find_phones_in_text(text)
+        except FileNotFoundError:
+            print("Файл не найден")
+            return []
+        except Exception as e:
+            print("Ошибка при чтении файла")
+            return []
+
+    def find_phones_on_website(self, url: str) -> List[str]:
         """Поиск номера телефона на сайте"""
+        try:
+            response = requests.get(url, timeout=10)
+            return self.find_phones_in_text(response.text)
+        except Exception as e:
+            print("Ошибка при загрузке страницы")
+            return []
+
 def main():
     """Интерфейс для пользователя"""
-    pass
 
+    validator = PhoneNumberValidator()
+
+    print("Поиск российских номеров телефонов")
+    print("Выберете действие")
+    print("1. Проверить один номер")
+    print("2. Найти номера в тексте")
+    print("3. Найти номера в файле")
+    print("4. Найти номера на сайте")
+
+    choice = input("Ваш выбор: 1 - 4")
+
+    if choice == '1':
+        phone = input("Введите номер телефона: ")
+        if validator.validate_phone(phone):
+            print("Это корректный номер!")
+        else:
+            print("Это некорректный номер!")
+    elif choice == '2':
+        text = input("Введите текст: ")
+        phones = validator.find_phones_in_text(text)
+        if phones:
+            print(f"Найдено номеров: {len(phones)}")
+            for i, phone in enumerate(phones, 1):
+                print(f"{i}. {phone}")
+        else:
+            print("Номера не найдены")
+
+    elif choice == '3':
+        file_path = input("Введите путь к файлу: ")
+        phones = validator.find_phones_in_file(file_path)
+        if phones:
+            print(f"Найдено номеров: {len(phones)}")
+            for i, phone in enumerate(phones, 1):
+                print(f"{i}. {phone}")
+        else:
+            print("Номера не найдены")
+
+    elif choice == '4':
+        url = input("Введите URL сайта: ")
+        phones = validator.find_phones_on_website(url)
+        if phones:
+            print(f"Найдено номеров: {len(phones)}")
+            for i, phone in enumerate(phones, 1):
+                print(f"{i}. {phone}")
+        else:
+            print("Номера не найдены")
+
+    else:
+        print("Неверный выбор!")
+
+if __name__ == "__main__":
+    main()

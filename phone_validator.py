@@ -10,14 +10,15 @@ class PhoneNumberValidator:
         # X - цифры, между ними могут быть пробелы, дефисы
         # Скобки могут быть только вокруг кода оператора (3 цифры после +7/8)
         self.phone_pattern = re.compile(
-            r'(?:\+7|8)(?:\s?\(\d{3}\)\s?|\s?\d{3}\s?|\s?\(\d{3}\)|\d{3})[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}'
+            r'(?:\+7|8)[\s\-]?(?:\s?\(\d{3}\)\s?|\s?\d{3}\s?|\s?\(\d{3}\)|\d{3})[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}'
         )
+
     def validate_phone(self, phone: str) -> bool:
         """Проверка корректности для одного номера телефона"""
         if not phone:
             return False
-        # Проверяем
-        if not self.phone_pattern.fullmatch(phone):
+
+        if not self.phone_pattern.search(phone):
             return False
 
         cleaned = re.sub(r'[^\d+]', '', phone)
@@ -37,15 +38,10 @@ class PhoneNumberValidator:
         if not text:
             return []
 
-        # Находим всё что похоже на телефон
+        # Находим все
         possible_phones = self.phone_pattern.findall(text)
-        # Корректные
-        valid_phones = []
-        for phone in possible_phones:
-            if self.validate_phone(phone):
-                valid_phones.append(phone)
-
-        return valid_phones
+        # Просто убираем пробелы, регулярка уже отфильтровало некорректные
+        return [phone.strip() for phone in possible_phones]
 
     def find_phones_in_file(self, file_path: str) -> List[str]:
         """Поиск номера телефона в файле"""
@@ -54,10 +50,10 @@ class PhoneNumberValidator:
                 text = file.read()
                 return self.find_phones_in_text(text)
         except FileNotFoundError:
-            print("Файл не найден")
+            print(f"Файл {file_path} не найден")
             return []
         except Exception as e:
-            print("Ошибка при чтении файла")
+            print(f"Ошибка при чтении файла {file_path}")
             return []
 
     def find_phones_on_website(self, url: str) -> List[str]:
@@ -81,7 +77,7 @@ def main():
     print("3. Найти номера в файле")
     print("4. Найти номера на сайте")
 
-    choice = input("Ваш выбор: 1 - 4")
+    choice = input("Ваш выбор: 1 - 4: ")
 
     if choice == '1':
         phone = input("Введите номер телефона: ")

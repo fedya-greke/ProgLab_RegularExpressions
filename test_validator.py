@@ -18,7 +18,9 @@ class TestPhoneNumberValidator(unittest.TestCase):
             "89123456789",
             "8-912-345-67-89",
             "+7 (912) 345 67 89",
-            "8(912)345-67-89"
+            "8 (912) 345-67-89",
+            "8(912) 345-67-89",
+            "8 (912)345-67-89"
         ]
 
         for phone in correct_numbers:
